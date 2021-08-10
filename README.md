@@ -4,7 +4,7 @@ This unofficial TaleSpire plugin that allows you to replicate custom asset over 
 The line has a (by default) hidden base which can be used to move the replication after it has been created. Can use
 an existing Mini transformed asset as a source or the content to be replicated can be prompted for.
 
-![Preview](https://imgur.com/xdIcEki)
+![Preview](https://i.imgur.com/xdIcEki.png)
 
 ## Change Log
 
