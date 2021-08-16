@@ -10,11 +10,13 @@ namespace LordAshes
     public partial class ReplicatorPlugin
     {
         private const string photonRulerName = "PhotonRuler(Clone)";
-        private const string lineIndicatorName = "LineIndicator(Clone)";
+        public const string lineIndicatorName = "LineIndicator(Clone)";
+        public const string sphereIndicatorName = "SphereIndicator(Clone)";
+        private string rulerType = "";
         private List<Vector3> waypoints = new List<Vector3>();
-        private Action<Vector3[]> _callback = null;
+        private Action<Vector3[],string> _callback = null;
 
-        public void SubscribeRulerEvents(Action<Vector3[]> callback)
+        public void SubscribeRulerEvents(Action<Vector3[],string> callback)
         {
             Debug.Log("Subscribing To RulerEvents");
             RulerBoardTool.OnCloseRulers += RulerBoardTool_OnCloseRulers;
@@ -30,10 +32,20 @@ namespace LordAshes
                 {
                     if (child.name == lineIndicatorName)
                     {
-                        foreach (Transform wayppoint in child.transform.Children())
+                        foreach (Transform waypoint in child.transform.Children())
                         {
-                            recorded.Add(wayppoint.position);
+                            recorded.Add(waypoint.position);
                         }
+                        rulerType = lineIndicatorName;
+                    }
+                    else if(child.name == sphereIndicatorName)
+                    {
+                        foreach(Transform waypoint in child.transform.Children())
+                        {
+                            //Debug.Log("XYZ: " + waypoint.position.x + ", " + waypoint.position.y + ", " + waypoint.position.z);
+                            recorded.Add(waypoint.position);
+                        }
+                        rulerType = sphereIndicatorName;
                     }
                 }
             }
@@ -44,7 +56,7 @@ namespace LordAshes
         {
             Debug.Log("Ruler Event Complete");
             RulerBoardTool.OnCloseRulers -= RulerBoardTool_OnCloseRulers;
-            _callback(waypoints.ToArray());
+            _callback(waypoints.ToArray(),rulerType);
         }
     }
 }
