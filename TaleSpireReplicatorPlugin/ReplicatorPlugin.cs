@@ -18,7 +18,7 @@ namespace LordAshes
         // Plugin info
         public const string Name = "Replicator Plug-In";
         public const string Guid = "org.lordashes.plugins.replicator";
-        public const string Version = "1.0.0.0";
+        public const string Version = "1.1.0.0";
 
         // Loose Dependencies
         public const string CMP = "org.lordashes.plugins.custommini";
@@ -214,6 +214,7 @@ namespace LordAshes
                 }
             }
             if (asset == null) { Debug.LogWarning("Unable to locate Line Replicator base"); pluginState = ReplicationState.idle; return; }
+            asset.name = "Effect:" + asset.Creature.CreatureId + ".0";
             _replicatedAsset = asset;
 
             ReplicationData data = new ReplicationData() { content = _replicatedContent };
@@ -257,6 +258,7 @@ namespace LordAshes
                         {
                             Debug.Log("Place GO at " + (pnt1 + (delta * m)));
                             GameObject copy = GameObject.Instantiate(assetBundle.LoadAsset<GameObject>(_replicatedContent));
+                            copy.name = "Effect:" + _replicatedAsset.Creature.CreatureId + "." + w+"."+m;
                             copy.transform.position = (pnt1 + (delta * m));
                             copy.transform.SetParent(_replicatedAsset.transform);
                             Vector3 dir = (pnt2 - pnt1);

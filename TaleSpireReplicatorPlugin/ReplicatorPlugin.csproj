@@ -72,7 +72,7 @@
       <HintPath>D:\Steam\steamapps\common\TaleSpire\TaleSpire_Data\Managed\Bouncyrock.TaleSpire.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="FileAccessPlugin">
-      <HintPath>..\..\..\..\AppData\Roaming\r2modmanPlus-local\TaleSpire\profiles\Plugins\BepInEx\plugins\LordAshes-FileAccessPlugin\FileAccessPlugin.dll</HintPath>
+      <HintPath>..\..\TaleSpireFileAccessPlugin\TaleSpireFileAccessPlugin\bin\Debug\FileAccessPlugin.dll</HintPath>
     </Reference>
     <Reference Include="RadialUI">
       <HintPath>..\..\..\..\AppData\Roaming\r2modmanPlus-local\TaleSpire\profiles\Plugins\BepInEx\plugins\HolloFox_TS-RadialUIPlugin\RadialUI.dll</HintPath>
