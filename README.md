@@ -9,6 +9,7 @@ an existing Mini transformed asset as a source or the content to be replicated c
 ## Change Log
 
 1.1.0: Added name starting with "Effect" to replicated objects for better compatebilty with other plugins.
+
 1.0.0: Initial release
 
 ## Install
