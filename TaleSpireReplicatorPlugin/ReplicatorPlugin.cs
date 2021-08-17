@@ -35,6 +35,7 @@ namespace LordAshes
         private CreatureBoardAsset _replicatedAsset = null;
         private Vector3[] _waypoints = null;
         private int sequencer = 0;
+        private string _rulerType = "";
 
         /// <summary>
         /// Function for initializing plugin
@@ -67,7 +68,7 @@ namespace LordAshes
                 pluginState = ReplicationState.rulerEventStarted;
             }
 
-            switch(pluginState)
+            switch (pluginState)
             {
                 case ReplicationState.idle:
                     break;
@@ -80,18 +81,18 @@ namespace LordAshes
                     break;
                 case ReplicationState.rulerEventComplete:
                     if (sequencer == 1)
-                    { 
+                    {
                         Debug.Log("Replicator Plugin: Replication Ruler Definition Event Completed");
-                        sequencer = 1+1;
+                        sequencer = 1 + 1;
                         pluginState = ReplicationState.creatingBase;
                     }
                     break;
                 case ReplicationState.creatingBase:
                     if (sequencer == 1)
                     {
-                        Debug.Log("Replicator Plugin: Creating Line Replicator Base"); 
+                        Debug.Log("Replicator Plugin: Creating Line Replicator Base");
                         CreateMiniBase(_waypoints[0]);
-                        sequencer = 20+1;
+                        sequencer = 20 + 1;
                         pluginState = ReplicationState.requestingCopies;
                     }
                     break;
@@ -105,9 +106,14 @@ namespace LordAshes
                     break;
                 case ReplicationState.creatingCopies:
                     if (sequencer == 1)
-                    { 
+                    {
                         Debug.Log("Replicator Plugin: Processing Replication");
-                        CreateCopyMinis();
+                        if (_rulerType == lineIndicatorName)
+                            CreateCopyMinisLine();
+                        else if (_rulerType == sphereIndicatorName)
+                            CreateCopyMinisSphere();
+                        else
+                            Debug.Log("ReplicatorPlugin: ERROR - No rulerType found...");
                         pluginState = ReplicationState.idle;
                     }
                     break;
@@ -120,7 +126,7 @@ namespace LordAshes
             {
                 GUIStyle gs = new GUIStyle() { wordWrap = true, fontSize = 16 };
                 gs.normal.textColor = Color.yellow;
-                if(_replicatedContent==null)
+                if (_replicatedContent == null)
                 {
                     GUI.Label(new Rect(10, 30, 1900, 120), "Line Replicator Active: (Content Name To Be Prompted)", gs);
                 }
@@ -130,7 +136,7 @@ namespace LordAshes
                 }
                 else
                 {
-                    GUI.Label(new Rect(10, 30, 1900, 120), "Line Replicator Active: (Replicating '"+_replicatedContent+"')", gs);
+                    GUI.Label(new Rect(10, 30, 1900, 120), "Line Replicator Active: (Replicating '" + _replicatedContent + "')", gs);
                 }
             }
         }
@@ -147,7 +153,7 @@ namespace LordAshes
             ReplicationData data = JsonConvert.DeserializeObject<ReplicationData>(obj[0].value);
             // Store provided waypoints
             CreaturePresenter.TryGetAsset(obj[0].cid, out _replicatedAsset);
-            Debug.Log("Remote Replication Request: Asset "+_replicatedAsset.Creature.CreatureId);
+            Debug.Log("Remote Replication Request: Asset " + _replicatedAsset.Creature.CreatureId);
             _replicatedContent = data.content;
             Debug.Log("Remote Replication Request: Content " + _replicatedContent);
             _waypoints = data.GetWaypoints();
@@ -161,10 +167,10 @@ namespace LordAshes
         /// Callback method used by the Ruler to indicate the ruler tool has been closed 
         /// </summary>
         /// <param name="waypoints">Vector3 array containing the points defining the ruler line</param>
-        private void RulerEvent(Vector3[] waypoints)
+        private void RulerEvent(Vector3[] waypoints, string rulerType)
         {
             _waypoints = waypoints;
-
+            _rulerType = rulerType;
             // Check to see if content is been selected (via mini selection)
             if (_replicatedContent != null)
             {
@@ -235,11 +241,12 @@ namespace LordAshes
         /// <summary>
         /// Method used to process a replication request by copying the specified content along the specified waypoints line
         /// </summary>
-        private void CreateCopyMinis()
+        private void CreateCopyMinisLine()
         {
             try
             {
                 Debug.Log("Replicator Plugin:   Loading assetBundle '" + _replicatedContent + "'...");
+                Debug.Log("Replicator Plugin:   Replicating Line...");
                 AssetBundle assetBundle = FileAccessPlugin.AssetBundle.Load(_replicatedContent);
                 try
                 {
@@ -256,14 +263,14 @@ namespace LordAshes
                         distance = distance + 0.25f;
                         for (int m = 0; m < distance; m++)
                         {
-                            Debug.Log("Place GO at " + (pnt1 + (delta * m)));
+                            //Debug.Log("Place GO at " + (pnt1 + (delta * m)));
                             GameObject copy = GameObject.Instantiate(assetBundle.LoadAsset<GameObject>(_replicatedContent));
-                            copy.name = "Effect:" + _replicatedAsset.Creature.CreatureId + "." + w+"."+m;
+                            copy.name = "Effect:" + _replicatedAsset.Creature.CreatureId + "." + w + "." + m;
                             copy.transform.position = (pnt1 + (delta * m));
                             copy.transform.SetParent(_replicatedAsset.transform);
                             Vector3 dir = (pnt2 - pnt1);
                             float angle = Vector3.Angle(transform.forward, dir) + 90.0f;
-                            Debug.Log("Set Angle to " + angle);
+                            //Debug.Log("Set Angle to " + angle);
                             copy.transform.localEulerAngles = new Vector3(0f, angle, 0f);
                             // Debug.Log("Base Rotation " + _replicatedAsset.BaseLoader.transform.eulerAngles);
                             // copy.transform.localEulerAngles = new Vector3(0f, angle - _replicatedAsset.BaseLoader.transform.eulerAngles.y, 0f);
@@ -276,6 +283,81 @@ namespace LordAshes
             }
             catch (Exception x) { Debug.Log("Exception (State1) Placing Mini Copies: " + x); }
         }
+
+        /// <summary>
+        /// Method used to process a replication request by copying the specified content along the specified waypoints sphere
+        /// </summary>
+        private void CreateCopyMinisSphere()
+        {
+            try
+            {
+                Debug.Log("Replicator Plugin:   Loading assetBundle '" + _replicatedContent + "'...");
+                Debug.Log("Replicator Plugin:   Replicating Sphere...");
+                AssetBundle assetBundle = FileAccessPlugin.AssetBundle.Load(_replicatedContent);
+                try
+                {
+                    for (int w = 1; w < waypoints.Count(); w++)
+                    {
+                        // Corrects angle on lines going from right to left
+                        Vector3 pnt1 = waypoints[w - 1];
+                        Vector3 pnt2 = waypoints[w];
+                        if (pnt1.x > pnt2.x) { Vector3 pnt3 = pnt1; pnt1 = pnt2; pnt2 = pnt3; }
+
+                        // Create mini copies
+                        float distance = Vector3.Distance(pnt1, pnt2);
+                        Vector3 delta = (pnt2 - pnt1) / distance;
+                        distance = distance + 0.25f;
+                        for (int m = 0; m < distance; m++)
+                        {
+                            Vector3 previousRadialPoint = Vector3.zero;
+                            for (int i = 0; i < 360; i += 1)
+                            {
+                                if (previousRadialPoint == Vector3.zero)
+                                {
+                                    //Debug.Log("Place GOs at " + (pnt1 + (delta * m)));
+                                    GameObject copy = GameObject.Instantiate(assetBundle.LoadAsset<GameObject>(_replicatedContent));
+                                    copy.name = "Effect:" + _replicatedAsset.Creature.CreatureId + "." + w + "." + m + "." + i;
+                                    copy.transform.position = (pnt1 + (delta * m));
+                                    copy.transform.RotateAround(_replicatedAsset.transform.position, Vector3.up, i);
+                                    copy.transform.SetParent(_replicatedAsset.transform);
+                                    Vector3 dir = (copy.transform.position - _replicatedAsset.transform.position);
+                                    float angle = Vector3.SignedAngle(transform.forward, dir, Vector3.up);
+
+                                    //Debug.Log("Set Angle to " + angle);
+                                    copy.transform.localEulerAngles = new Vector3(0f, angle, 0f);
+                                    previousRadialPoint = copy.transform.position;
+                                }
+                                else
+                                {
+                                    GameObject tempGO = new GameObject();
+                                    tempGO.transform.position = (pnt1 + (delta * m));
+                                    tempGO.transform.RotateAround(_replicatedAsset.transform.position, Vector3.up, i);
+
+                                    if (Vector3.Distance(tempGO.transform.position, previousRadialPoint) >= 1f)
+                                    {
+                                        //Debug.Log("Place GOs at " + (pnt1 + (delta * m)));
+                                        GameObject copy = GameObject.Instantiate(assetBundle.LoadAsset<GameObject>(_replicatedContent));
+                                        copy.name = "Effect:" + _replicatedAsset.Creature.CreatureId + "." + w + "." + m + "." + i;
+                                        copy.transform.position = tempGO.transform.position;
+                                        copy.transform.SetParent(_replicatedAsset.transform);
+                                        Vector3 dir = (copy.transform.position - _replicatedAsset.transform.position);
+                                        float angle = Vector3.SignedAngle(transform.forward, dir, Vector3.up);
+
+                                        //Debug.Log("Set Angle to " + angle);
+                                        copy.transform.localEulerAngles = new Vector3(0f, angle, 0f);
+                                        previousRadialPoint = copy.transform.position;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception e) { Debug.Log("Exception (Stage2) Placing Mini Copies: " + e); }
+                assetBundle.Unload(false);
+            }
+            catch (Exception x) { Debug.Log("Exception (State1) Placing Mini Copies: " + x); }
+        }
+
 
         /// <summary>
         /// Method to properly evaluate shortcut keys. 
@@ -307,7 +389,7 @@ namespace LordAshes
             public void PutWaypoints(Vector3[] waypoints)
             {
                 List<string> strPnts = new List<string>();
-                foreach(Vector3 pnt in waypoints)
+                foreach (Vector3 pnt in waypoints)
                 {
                     strPnts.Add(pnt.x + "," + pnt.y + "," + pnt.z);
                 }
