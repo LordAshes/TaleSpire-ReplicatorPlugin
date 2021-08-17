@@ -18,10 +18,10 @@ namespace LordAshes
         // Plugin info
         public const string Name = "Replicator Plug-In";
         public const string Guid = "org.lordashes.plugins.replicator";
-        public const string Version = "1.1.0.0";
+        public const string Version = "1.2.0.0";
 
         // Loose Dependencies
-        public const string CMP = "org.lordashes.plugins.custommini";
+        public const string CMP = "org.lordashes.plugins.custommini.effect";
         public const string baseMiniNGuid = "5dd58c82-a4a9-4fef-be31-24b50daedecd";
 
         // Content directory
@@ -33,9 +33,9 @@ namespace LordAshes
 
         private string _replicatedContent = null;
         private CreatureBoardAsset _replicatedAsset = null;
+        private ReplicatorType _rulerType = ReplicatorType.Idle;
         private Vector3[] _waypoints = null;
         private int sequencer = 0;
-        private string _rulerType = "";
 
         /// <summary>
         /// Function for initializing plugin
@@ -108,18 +108,26 @@ namespace LordAshes
                     if (sequencer == 1)
                     {
                         Debug.Log("Replicator Plugin: Processing Replication");
-                        if (_rulerType == lineIndicatorName)
-                            CreateCopyMinisLine();
-                        else if (_rulerType == sphereIndicatorName)
-                            CreateCopyMinisSphere();
-                        else
-                            Debug.Log("ReplicatorPlugin: ERROR - No rulerType found...");
+                        switch (_rulerType)
+                        {
+                            case ReplicatorType.Line:
+                                CreateCopyMinisLine();
+                                break;
+                            case ReplicatorType.Circle:
+                                CreateCopyMinisCircleArea();
+                                break;
+                            default:
+                                Debug.Log("ReplicatorPlugin: ERROR - No rulerType found...");
+                                break;
+                        }
+                        _rulerType = ReplicatorType.Idle;
                         pluginState = ReplicationState.idle;
                     }
                     break;
             }
             if (sequencer != 0) { sequencer--; Debug.Log("Sequence=" + sequencer); }
         }
+
         public void OnGUI()
         {
             if (pluginState == ReplicationState.rulerEventStarted)
@@ -128,15 +136,15 @@ namespace LordAshes
                 gs.normal.textColor = Color.yellow;
                 if (_replicatedContent == null)
                 {
-                    GUI.Label(new Rect(10, 30, 1900, 120), "Line Replicator Active: (Content Name To Be Prompted)", gs);
+                    GUI.Label(new Rect(10, 30, 1900, 120), "Replicator ["+_rulerType.ToString()+" Mode] Active: (Content Name To Be Prompted)", gs);
                 }
                 else if (_replicatedContent == null)
                 {
-                    GUI.Label(new Rect(10, 30, 1900, 120), "Line Replicator Active: (Content Name To Be Prompted)", gs);
+                    GUI.Label(new Rect(10, 30, 1900, 120), "Replicator ["+_rulerType.ToString() + " Mode] Active: (Content Name To Be Prompted)", gs);
                 }
                 else
                 {
-                    GUI.Label(new Rect(10, 30, 1900, 120), "Line Replicator Active: (Replicating '" + _replicatedContent + "')", gs);
+                    GUI.Label(new Rect(10, 30, 1900, 120), "Replicator ["+_rulerType.ToString() + " Mode] Active: (Replicating '" + _replicatedContent + "')", gs);
                 }
             }
         }
@@ -167,7 +175,8 @@ namespace LordAshes
         /// Callback method used by the Ruler to indicate the ruler tool has been closed 
         /// </summary>
         /// <param name="waypoints">Vector3 array containing the points defining the ruler line</param>
-        private void RulerEvent(Vector3[] waypoints, string rulerType)
+        /// <param name="rulerType">String indicating the ruler type</param>
+        private void RulerEvent(Vector3[] waypoints, ReplicatorType rulerType)
         {
             _waypoints = waypoints;
             _rulerType = rulerType;
@@ -221,6 +230,7 @@ namespace LordAshes
             }
             if (asset == null) { Debug.LogWarning("Unable to locate Line Replicator base"); pluginState = ReplicationState.idle; return; }
             asset.name = "Effect:" + asset.Creature.CreatureId + ".0";
+            CreatureManager.SetCreatureName(asset.Creature.CreatureId,_rulerType+" Replication of "+_replicatedContent+"<size=0>{}");
             _replicatedAsset = asset;
 
             ReplicationData data = new ReplicationData() { content = _replicatedContent };
@@ -272,9 +282,6 @@ namespace LordAshes
                             float angle = Vector3.Angle(transform.forward, dir) + 90.0f;
                             //Debug.Log("Set Angle to " + angle);
                             copy.transform.localEulerAngles = new Vector3(0f, angle, 0f);
-                            // Debug.Log("Base Rotation " + _replicatedAsset.BaseLoader.transform.eulerAngles);
-                            // copy.transform.localEulerAngles = new Vector3(0f, angle - _replicatedAsset.BaseLoader.transform.eulerAngles.y, 0f);
-                            // Debug.Log("Copy Rotation " + copy.transform.localEulerAngles);
                         }
                     }
                 }
@@ -287,7 +294,7 @@ namespace LordAshes
         /// <summary>
         /// Method used to process a replication request by copying the specified content along the specified waypoints sphere
         /// </summary>
-        private void CreateCopyMinisSphere()
+        private void CreateCopyMinisCircleArea()
         {
             try
             {
@@ -357,7 +364,6 @@ namespace LordAshes
             }
             catch (Exception x) { Debug.Log("Exception (State1) Placing Mini Copies: " + x); }
         }
-
 
         /// <summary>
         /// Method to properly evaluate shortcut keys. 

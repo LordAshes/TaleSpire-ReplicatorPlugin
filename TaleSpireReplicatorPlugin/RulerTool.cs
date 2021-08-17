@@ -9,19 +9,29 @@ namespace LordAshes
 {
     public partial class ReplicatorPlugin
     {
-        private const string photonRulerName = "PhotonRuler(Clone)";
-        public const string lineIndicatorName = "LineIndicator(Clone)";
-        public const string sphereIndicatorName = "SphereIndicator(Clone)";
-        private string rulerType = "";
-        private List<Vector3> waypoints = new List<Vector3>();
-        private Action<Vector3[],string> _callback = null;
-
-        public void SubscribeRulerEvents(Action<Vector3[],string> callback)
+        public enum ReplicatorType
         {
+            Idle = 0,
+            Line = 1,
+            Circle = 2 
+        }
+
+        private const string photonRulerName = "PhotonRuler(Clone)";
+        public Dictionary<string, ReplicatorType> replicatorTypeNames = new Dictionary<string, ReplicatorType>();
+        private List<Vector3> waypoints = new List<Vector3>();
+        private Action<Vector3[],ReplicatorType> _callback = null;
+
+        public void SubscribeRulerEvents(Action<Vector3[],ReplicatorType> callback)
+        {
+            replicatorTypeNames.Clear();
+            replicatorTypeNames.Add("LineIndicator(Clone)", ReplicatorType.Line);
+            replicatorTypeNames.Add("SphereIndicator(Clone)", ReplicatorType.Circle);
+
             Debug.Log("Subscribing To RulerEvents");
             RulerBoardTool.OnCloseRulers += RulerBoardTool_OnCloseRulers;
             _callback = callback;
         }
+
         public void UpdateRulerEvents()
         {
             List<Vector3> recorded = new List<Vector3>();
@@ -30,22 +40,16 @@ namespace LordAshes
             {
                 foreach (Transform child in photonRuler.transform.Children())
                 {
-                    if (child.name == lineIndicatorName)
+                    foreach (KeyValuePair<string,ReplicatorType> repType in replicatorTypeNames)
                     {
-                        foreach (Transform waypoint in child.transform.Children())
+                        if (child.name == repType.Key)
                         {
-                            recorded.Add(waypoint.position);
+                            foreach (Transform waypoint in child.transform.Children())
+                            {
+                                recorded.Add(waypoint.position);
+                            }
+                            _rulerType = repType.Value;
                         }
-                        rulerType = lineIndicatorName;
-                    }
-                    else if(child.name == sphereIndicatorName)
-                    {
-                        foreach(Transform waypoint in child.transform.Children())
-                        {
-                            //Debug.Log("XYZ: " + waypoint.position.x + ", " + waypoint.position.y + ", " + waypoint.position.z);
-                            recorded.Add(waypoint.position);
-                        }
-                        rulerType = sphereIndicatorName;
                     }
                 }
             }
@@ -56,7 +60,7 @@ namespace LordAshes
         {
             Debug.Log("Ruler Event Complete");
             RulerBoardTool.OnCloseRulers -= RulerBoardTool_OnCloseRulers;
-            _callback(waypoints.ToArray(),rulerType);
+            _callback(waypoints.ToArray(), _rulerType);
         }
     }
 }
