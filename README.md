@@ -12,7 +12,7 @@ the sphere ruler.
 
 ![Preview](https://i.imgur.com/xdIcEki.png)
 
-![Preview](https://www.youtube.com/watch?v=cx7Tfsl7xfo)
+Video: https://www.youtube.com/watch?v=cx7Tfsl7xfo
 
 ## Change Log
 
