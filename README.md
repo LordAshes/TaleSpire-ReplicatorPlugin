@@ -17,15 +17,25 @@ Video: https://www.youtube.com/watch?v=cx7Tfsl7xfo
 ## Change Log
 
 1.2.1: Fixed compatibility issue after TS update
+
 1.2.1: Optimized new base detection
+
 1.2.0: Plugin now supports both line and circle area (via sphere ruler) replication
+
 1.2.0: Selected ruler type (line or circle) is indciated when plugin is active
+
 1.2.0: Replicated based now has a friendly name
+
 1.2.0: Includes blank asset for making source minis (e.g. mini transformation to blank and then add desired effect)
+
 1.1.1: Updated WallOfFire asset to multiple heights called by WallOfFire, WallOfFire.20 and WallOfFire.30
+
 1.1.0: Modified name of replicated objects to allow Grab/Drop plugin to properly handle delete of Replicated content
+
 1.0.2: Cheap static FlameWall replaced by WallOfFlame
+
 1.0.1: Fixed image reference (no plugin change)
+
 1.0.0: Initial release
 
 ## Install
