@@ -18,11 +18,11 @@ namespace LordAshes
         // Plugin info
         public const string Name = "Replicator Plug-In";
         public const string Guid = "org.lordashes.plugins.replicator";
-        public const string Version = "1.2.0.0";
+        public const string Version = "1.2.1.0";
 
         // Loose Dependencies
         public const string CMP = "org.lordashes.plugins.custommini.effect";
-        public const string baseMiniNGuid = "5dd58c82-a4a9-4fef-be31-24b50daedecd";
+        public NGuid baseMiniNGuid = NGuid.Empty;
 
         // Content directory
         private string dir = UnityEngine.Application.dataPath.Substring(0, UnityEngine.Application.dataPath.LastIndexOf("/")) + "/TaleSpire_CustomData/";
@@ -33,6 +33,7 @@ namespace LordAshes
 
         private string _replicatedContent = null;
         private CreatureBoardAsset _replicatedAsset = null;
+        private CreatureGuid _replicatedBaseCreatureId = CreatureGuid.Empty;
         private ReplicatorType _rulerType = ReplicatorType.Idle;
         private Vector3[] _waypoints = null;
         private int sequencer = 0;
@@ -205,12 +206,26 @@ namespace LordAshes
         /// <param name="position">Vector3 position of the base (i.e. start of line)</param>
         private void CreateMiniBase(Vector3 position)
         {
-            CreatureDataV2 cd = new CreatureDataV2();
-            cd.BoardAssetIds = new NGuid[] { new NGuid(baseMiniNGuid) };
-            cd.ExplicitlyHidden = true;
-            cd.Flying = false;
-            cd.Stat0 = new CreatureStat(float.MaxValue, float.MaxValue - 1);
-            CreatureManager.CreateAndAddNewCreature(cd, position, Quaternion.Euler(0, 0, 0), false, true);
+            baseMiniNGuid = FindAsset(Config.Bind("Settings", "Base Mini Name", "Monkey (Snub-nosed)").Value);
+
+            Debug.Log("Replicator Plugin: Base '"+ Config.Bind("Settings", "Base Mini Name", "Monkey (Snub-nosed)").Value + "' NGuid = " + baseMiniNGuid.ToString());
+
+            CreatureDataV1 creatureDataV1 = new CreatureDataV1(baseMiniNGuid);
+            creatureDataV1.CreatureId = new CreatureGuid(new Bounce.Unmanaged.NGuid(System.Guid.NewGuid()));
+
+            CreatureDataV2 creatureDataV2 = new CreatureDataV2(creatureDataV1);
+            creatureDataV2.CreatureId = creatureDataV1.CreatureId;
+
+            /*
+            creatureDataV1.ExplicitlyHidden = true;
+            creatureDataV2.ExplicitlyHidden = true;
+            creatureDataV1.Flying = false;
+            creatureDataV2.Flying = false;
+            */
+
+            CreatureManager.CreateAndAddNewCreature(creatureDataV2, position, Quaternion.Euler(0, 0, 0), false, true);
+
+            _replicatedBaseCreatureId = creatureDataV1.CreatureId;
         }
 
         /// <summary>
@@ -218,16 +233,9 @@ namespace LordAshes
         /// </summary>
         private void RequestingCopyMinis()
         {
-            Debug.Log("Replicator Plugin:   Find Line Replicator Base...");
+            Debug.Log("Replicator Plugin:  Find Line Replicator Base...");
             CreatureBoardAsset asset = null;
-            foreach (CreatureBoardAsset check in CreaturePresenter.AllCreatureAssets)
-            {
-                if (check.Creature.Stat0.Max == float.MaxValue && check.Creature.Stat0.Value == (float.MaxValue - 1))
-                {
-                    CreatureManager.SetCreatureStatByIndex(check.Creature.CreatureId, new CreatureStat(0f, 0f), 0);
-                    asset = check;
-                }
-            }
+            CreaturePresenter.TryGetAsset(_replicatedBaseCreatureId, out asset);
             if (asset == null) { Debug.LogWarning("Unable to locate Line Replicator base"); pluginState = ReplicationState.idle; return; }
             asset.name = "Effect:" + asset.Creature.CreatureId + ".0";
             CreatureManager.SetCreatureName(asset.Creature.CreatureId,_rulerType+" Replication of "+_replicatedContent+"<size=0>{}");
@@ -378,6 +386,26 @@ namespace LordAshes
                 if (Input.GetKey(modifier) != check.Modifiers.Contains(modifier)) { return false; }
             }
             return true;
+        }
+
+        /// <summary>
+        /// Finds the Nguid of an asset based on a content name
+        /// </summary>
+        /// <param name="contentName"></param>
+        /// <returns></returns>
+        private static NGuid FindAsset(string contentName)
+        {
+            foreach ((AssetDb.DbEntry.EntryKind, List<AssetDb.DbGroup>) kind in AssetDb.GetAllGroups())
+            {
+                foreach (AssetDb.DbGroup group in kind.Item2)
+                {
+                    foreach (AssetDb.DbEntry item in group.Entries)
+                    {
+                        if (item.Name == contentName) { return item.Id; }
+                    }
+                }
+            }
+            return NGuid.Empty;
         }
 
         /// <summary>
